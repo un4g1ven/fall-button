@@ -52,7 +52,7 @@ For the worst cases (unconscious fall, no WiFi), pair this with an Apple Watch (
 |---|---|---|
 | Shelly Button 1 (WiFi) | ~$25 | — |
 | Lanyard with breakaway clasp | ~$3 | — |
-| Home Assistant | $0 (already running) | $0 |
+| Home Assistant | $0 | $0 |
 | ntfy.sh notification service | $0 | $0 (free tier easily covers personal use) |
 | **Total** | **~$28** | **$0/month** |
 
