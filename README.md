@@ -31,7 +31,7 @@ You're also comfortable with:
 
 - A bit of YAML editing
 - A self-hosted [Home Assistant](https://www.home-assistant.io/) instance that runs 24/7
-- Walking three family members through installing a small mobile app
+- Walking family members through installing a small mobile app
 
 If any of that sounds intimidating, this isn't the project for you — and that's fine. Commercial alternatives are a click away.
 
