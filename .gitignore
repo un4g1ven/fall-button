@@ -1,0 +1,16 @@
+# Personal config files (these are TEMPLATES in this repo, named .snippet to make that obvious)
+# If someone later copies them into a real HA install and commits the result, exclude those.
+secrets.yaml
+configuration.yaml
+automations.yaml
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor junk
+.vscode/
+.idea/
+*.swp
+*~

@@ -1,0 +1,16 @@
+# Append this to your Home Assistant configuration.yaml.
+# If you already have a `rest_command:` block, do NOT add a second one —
+# add `ntfy_send:` as a key under your existing `rest_command:`.
+
+rest_command:
+  ntfy_send:
+    url: "https://ntfy.sh/{{ topic }}"
+    method: POST
+    headers:
+      Title: "{{ title }}"
+      Priority: "{{ priority | default('3') }}"
+      Tags: "{{ tags | default('') }}"
+      Click: "{{ click | default('') }}"
+      Actions: "{{ actions | default('') }}"
+    payload: "{{ message }}"
+    content_type: "text/plain; charset=utf-8"

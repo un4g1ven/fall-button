@@ -1,0 +1,99 @@
+# Three Home Assistant automations for the Fall Button.
+# Append to your /config/automations.yaml.
+#
+# REPLACE THREE PLACEHOLDERS THROUGHOUT before pasting:
+#
+#   <DEVICE_ID>       — Shelly Button's HA device_id. Find at:
+#                       Settings > Devices & Services > Shelly > [your device]
+#                       The URL ends with /config/devices/device/<DEVICE_ID>
+#                       Copy that long hex string.
+#
+#   <BATTERY_ENTITY>  — full entity_id of the battery sensor, e.g.
+#                       sensor.shellybutton1_aabbccddeeff_battery
+#
+#   <WEARER_NAME>     — first name as it should appear in the alert title.
+#                       E.g., "MOM", "DAD", "GRANDPA". Whatever recipients
+#                       will recognize fastest in a panic.
+
+- id: fall_button_emergency
+  alias: "Fall button: any press -> emergency notification"
+  description: >
+    Any press (single, double, long — doesn't matter) fires a max-priority ntfy
+    alert with click-to-call. 30s cooldown suppresses duplicate flailing presses
+    via mode:single + a trailing delay.
+
+    Rationale for "any press" rather than long-press: a panicking elderly user
+    cannot reliably hold a button for 1.5 seconds. The cost of a false alarm
+    (annoying phone call) is much lower than the cost of a missed real emergency.
+    If false alarms become a problem, recess the button mechanically — do NOT
+    switch back to long-press.
+  mode: single
+  trigger:
+    - platform: event
+      event_type: shelly.click
+      event_data:
+        device_id: <DEVICE_ID>
+  action:
+    - service: rest_command.ntfy_send
+      data:
+        topic: !secret ntfy_topic_fall
+        title: "<WEARER_NAME> EMERGENCY BUTTON"
+        message: >
+          Pressed at {{ now().strftime('%a %-I:%M %p') }}.
+          Call them now or check on them.
+        priority: "5"
+        tags: "rotating_light,sos"
+        click: !secret wearer_phone_url
+        actions: !secret wearer_actions
+    - service: persistent_notification.create
+      data:
+        title: "<WEARER_NAME> button pressed"
+        message: "Triggered at {{ now().isoformat() }}"
+        notification_id: "fall_button_last_press"
+    # Cooldown: blocks re-triggers for 30s. Combined with mode:single,
+    # ensures multiple presses within a half-minute generate only one alert.
+    - delay: "00:00:30"
+
+- id: fall_button_low_battery
+  alias: "Fall button: low battery warning"
+  description: "Sends a moderate-priority ntfy alert when battery drops below 20%."
+  mode: single
+  trigger:
+    - platform: numeric_state
+      entity_id: <BATTERY_ENTITY>
+      below: 20
+  action:
+    - service: rest_command.ntfy_send
+      data:
+        topic: !secret ntfy_topic_fall
+        title: "<WEARER_NAME> button battery low"
+        message: >
+          Battery at {{ states('<BATTERY_ENTITY>') }}%. Plug in the USB-C cable to charge.
+        priority: "3"
+        tags: "battery,warning"
+
+- id: fall_button_offline_watchdog
+  alias: "Fall button: offline watchdog (>36h silent)"
+  description: >
+    Every 6 hours, check whether the button has reported recently.
+    Alert if its battery sensor hasn't updated in 36+ hours — catches the
+    silent-failure case where the device went offline without anyone noticing.
+  mode: single
+  trigger:
+    - platform: time_pattern
+      hours: "/6"
+  condition:
+    - condition: template
+      value_template: >
+        {% set ent = states.<BATTERY_ENTITY> %}
+        {{ ent is not none and (now() - ent.last_changed).total_seconds() > 36 * 3600 }}
+  action:
+    - service: rest_command.ntfy_send
+      data:
+        topic: !secret ntfy_topic_fall
+        title: "<WEARER_NAME> button is silent"
+        message: >
+          Button has not reported in 36+ hours. It may be off, out of battery, or out of WiFi range.
+          Check on it.
+        priority: "4"
+        tags: "warning,signal_strength"
